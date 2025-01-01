@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Trends Scraper</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Twitter Trends Scraper</h1>
+        <button onclick="runScraper()">Fetch Trending Topics</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function fetchTrendingTopics() {
+            const response = await fetch('/api/scrape');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.details || 'Failed to fetch trending topics');
+            }
+            return response.json();
+        }
+
+        async function runScraper() {
+            const resultsDiv = document.getElementById('results');
+            try {
+                resultsDiv.innerHTML = `
+                    <div class="loading">
+                        <p>Fetching trending topics...</p>
+                        <div class="spinner"></div>
+                    </div>
+                `;
+                
+                const data = await fetchTrendingTopics();
+                const date = new Date(data.timestamp).toLocaleString();
+                
+                const trendsList = data.trends.map(trend => `<li>${trend}</li>`).join('');
+                
+                resultsDiv.innerHTML = `
+                    <div class="results-container">
+                        <h2>Trending Topics as of ${date}</h2>
+                        <ul class="trends-list">
+                            ${trendsList}
+                        </ul>
+                        <p class="ip-info">Query IP: ${data.ipAddress}</p>
+                        <div class="json-container">
+                            <h3>Database Record:</h3>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                        <button onclick="runScraper()" class="refresh-btn">Refresh Trends</button>
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <p>Error: ${error.message}</p>
+                        <button onclick="runScraper()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
